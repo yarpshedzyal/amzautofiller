@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "Amazon Order Info Copier",
+    "version": "1.0",
+    "description": "Copies order info from Amazon and pastes it into Google Sheets.",
+    "permissions": [
+      "activeTab",
+      "storage",
+      "clipboardWrite",
+      "clipboardRead",
+      "scripting"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.amazon.com/*"],
+        "js": ["content.js"]
+      }
+    ]
+  }
+  
