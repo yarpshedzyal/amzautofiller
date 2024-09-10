@@ -66,20 +66,23 @@ function pasteOrderInfoToSheet(orderInfo) {
   try {
     console.log("Pasting the following info:", orderInfo);
 
-    // First, prepare a string to be copied to the clipboard (tab-separated values)
+    // Create a string with tab-separated values to simulate row insertion in Google Sheets
     const infoToPaste = `${orderInfo.order_id}\t${orderInfo.asin}\t${orderInfo.price}\t${orderInfo.qty}\t${orderInfo.phone}`;
 
-    // Copy the info to the clipboard
-    navigator.clipboard.writeText(infoToPaste).then(() => {
-      console.log("Order info copied to clipboard");
+    // Create a temporary textarea element to hold the text for clipboard operations
+    const tempTextArea = document.createElement('textarea');
+    document.body.appendChild(tempTextArea);
+    tempTextArea.value = infoToPaste;
+    tempTextArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempTextArea);
 
-      // Simulate pasting into the current cell
-      document.execCommand('paste');
+    console.log("Order info copied to clipboard");
 
-      console.log("Pasted order info from clipboard into Google Sheets");
-    }).catch((err) => {
-      console.error("Error copying to clipboard", err);
-    });
+    // Simulate pasting the content in Google Sheets using keyboard shortcuts
+    document.execCommand('paste');
+    console.log("Order info pasted successfully into Google Sheets");
+
   } catch (error) {
     console.error("Error pasting order info into Google Sheets:", error);
   }
