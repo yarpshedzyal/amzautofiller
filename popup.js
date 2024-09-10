@@ -1,7 +1,6 @@
 document.getElementById('copyBtn').addEventListener('click', async () => {
   console.log("Copy button clicked");
 
-  // Execute script in the Amazon tab to copy order info
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
@@ -11,7 +10,6 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
         console.error("Error executing content script:", chrome.runtime.lastError);
       } else {
         console.log("Order info copied successfully");
-        console.log(result);
       }
     });
   });
@@ -20,12 +18,11 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
 document.getElementById('pasteBtn').addEventListener('click', async () => {
   console.log("Paste button clicked");
 
-  // Retrieve stored order info and paste it into Google Sheets
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.storage.local.get('orderInfo', (data) => {
-      if (data.orderInfo) {
-        console.log("Pasting order info:", data.orderInfo);
+  chrome.storage.local.get('orderInfo', (data) => {
+    if (data.orderInfo) {
+      console.log("Pasting order info:", data.orderInfo);
 
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
           func: pasteOrderInfoToSheet,
@@ -37,10 +34,10 @@ document.getElementById('pasteBtn').addEventListener('click', async () => {
             console.log("Order info pasted successfully");
           }
         });
-      } else {
-        console.error("No order info found in storage");
-      }
-    });
+      });
+    } else {
+      console.error("No order info found in storage");
+    }
   });
 });
 
@@ -55,7 +52,6 @@ function copyOrderInfo() {
       phone: document.querySelector('#MYO-app > div > div.a-row.a-spacing-medium > div.a-column.a-span10 > div > div:nth-child(2) > div.a-column.a-span5.a-span-last > div > div > div > div > div:nth-child(2) > div > table > tbody > div > tr > td.a-text-left.a-align-bottom').innerText
     };
 
-    // Store the order info in local storage
     chrome.storage.local.set({ orderInfo });
     console.log("Order info stored:", orderInfo);
 
@@ -65,20 +61,25 @@ function copyOrderInfo() {
   }
 }
 
-// Function to paste the order info into Google Sheets
+// Function to simulate pasting order info into Google Sheets
 function pasteOrderInfoToSheet(orderInfo) {
   try {
     console.log("Pasting the following info:", orderInfo);
 
-    // Assuming these selectors target the cells in the Google Sheet
-    // Adjust the selectors based on your Google Sheet setup
-    document.querySelector('[name="order_id"]').value = orderInfo.order_id;
-    document.querySelector('[name="asin"]').value = orderInfo.asin;
-    document.querySelector('[name="price"]').value = orderInfo.price;
-    document.querySelector('[name="qty"]').value = orderInfo.qty;
-    document.querySelector('[name="phone"]').value = orderInfo.phone;
+    // First, prepare a string to be copied to the clipboard (tab-separated values)
+    const infoToPaste = `${orderInfo.order_id}\t${orderInfo.asin}\t${orderInfo.price}\t${orderInfo.qty}\t${orderInfo.phone}`;
 
-    console.log("Order info pasted into the Google Sheets cells");
+    // Copy the info to the clipboard
+    navigator.clipboard.writeText(infoToPaste).then(() => {
+      console.log("Order info copied to clipboard");
+
+      // Simulate pasting into the current cell
+      document.execCommand('paste');
+
+      console.log("Pasted order info from clipboard into Google Sheets");
+    }).catch((err) => {
+      console.error("Error copying to clipboard", err);
+    });
   } catch (error) {
     console.error("Error pasting order info into Google Sheets:", error);
   }
