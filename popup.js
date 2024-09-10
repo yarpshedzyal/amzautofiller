@@ -1,6 +1,7 @@
 document.getElementById('copyBtn').addEventListener('click', async () => {
-  console.log("Copy button clicked");  // Log when the button is clicked
-  // Send a message to content.js to get order info
+  console.log("Copy button clicked");
+
+  // Execute script in the Amazon tab to copy order info
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     chrome.scripting.executeScript({
       target: { tabId: tabs[0].id },
@@ -9,19 +10,36 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
       if (chrome.runtime.lastError) {
         console.error("Error executing content script:", chrome.runtime.lastError);
       } else {
-        console.log("Content script executed successfully");
+        console.log("Order info copied successfully");
+        console.log(result);
       }
     });
   });
 });
 
 document.getElementById('pasteBtn').addEventListener('click', async () => {
-  console.log("Paste button clicked");  // Log when the button is clicked
-  // Paste the buffer into Google Sheets
+  console.log("Paste button clicked");
+
+  // Retrieve stored order info and paste it into Google Sheets
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      function: pasteOrderInfoToSheet
+    chrome.storage.local.get('orderInfo', (data) => {
+      if (data.orderInfo) {
+        console.log("Pasting order info:", data.orderInfo);
+
+        chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: pasteOrderInfoToSheet,
+          args: [data.orderInfo]
+        }, () => {
+          if (chrome.runtime.lastError) {
+            console.error("Error pasting to Google Sheets:", chrome.runtime.lastError);
+          } else {
+            console.log("Order info pasted successfully");
+          }
+        });
+      } else {
+        console.error("No order info found in storage");
+      }
     });
   });
 });
@@ -37,30 +55,31 @@ function copyOrderInfo() {
       phone: document.querySelector('#MYO-app > div > div.a-row.a-spacing-medium > div.a-column.a-span10 > div > div:nth-child(2) > div.a-column.a-span5.a-span-last > div > div > div > div > div:nth-child(2) > div > table > tbody > div > tr > td.a-text-left.a-align-bottom').innerText
     };
 
-    // Log the copied order info
-    console.log("Order info copied:", orderInfo);
-    
     // Store the order info in local storage
     chrome.storage.local.set({ orderInfo });
+    console.log("Order info stored:", orderInfo);
+
+    return orderInfo;
   } catch (error) {
     console.error("Error copying order info:", error);
   }
 }
 
-// Function to paste the order info to Google Sheets
-function pasteOrderInfoToSheet() {
-  chrome.storage.local.get('orderInfo', (result) => {
-    const orderInfo = result.orderInfo;
-    if (orderInfo) {
-      console.log("Pasting order info:", orderInfo);
-      // Example of pasting the info to Google Sheets (adjust according to actual page structure)
-      document.querySelector('[name="order_id"]').value = orderInfo.order_id;
-      document.querySelector('[name="asin"]').value = orderInfo.asin;
-      document.querySelector('[name="price"]').value = orderInfo.price;
-      document.querySelector('[name="qty"]').value = orderInfo.qty;
-      document.querySelector('[name="phone"]').value = orderInfo.phone;
-    } else {
-      console.log("No order info found in storage");
-    }
-  });
+// Function to paste the order info into Google Sheets
+function pasteOrderInfoToSheet(orderInfo) {
+  try {
+    console.log("Pasting the following info:", orderInfo);
+
+    // Assuming these selectors target the cells in the Google Sheet
+    // Adjust the selectors based on your Google Sheet setup
+    document.querySelector('[name="order_id"]').value = orderInfo.order_id;
+    document.querySelector('[name="asin"]').value = orderInfo.asin;
+    document.querySelector('[name="price"]').value = orderInfo.price;
+    document.querySelector('[name="qty"]').value = orderInfo.qty;
+    document.querySelector('[name="phone"]').value = orderInfo.phone;
+
+    console.log("Order info pasted into the Google Sheets cells");
+  } catch (error) {
+    console.error("Error pasting order info into Google Sheets:", error);
+  }
 }
